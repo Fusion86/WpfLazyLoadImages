@@ -18,15 +18,18 @@ This is needed because I don't know of any other way to 'lazy load' a ViewModel 
 
 ## Possible improvements
 
-- UI virtualization (WrapPanel does NOT support this out of the box, hence why it is disabled)
-    - This doesn't actually make the scrolling any smoother (because it already is butter smooth), but when resizing the window huge 'lagspikes' occur.
+- ~~UI virtualization (WrapPanel does NOT support this out of the box, hence why it is disabled)~~
+    - ~~This doesn't actually make the scrolling any smoother (because it already is butter smooth), but when resizing the window huge 'lagspikes' occur.~~
+    - Added, but maybe this causes some freezing after around 400MB RAM usage? Window resizing is pretty lag-free now.
 - Memory usage is not fantastic (ALL thumbnails will be loaded into the RAM)
     - For my use case this is fine, because there won't be more than 1000 images loaded at the same time (which uses like 400MB, which is like half of the League of Legends Client, [this is not a joke](https://i.imgur.com/zzi0gBF.png))
     - A possible solution for this problem could be caching the images to the disk and unloading them whenever they scroll out of view(ing-range) and fetch them from the cache whenever they scroll into view.
 - Maybe load like 4 thumbnails in parallel, instead of synchronously. We obviously don't want to load all 800 at the same time, but maybe loading like 4 at the same time could be faster. This could be faster because not all the time is spent on actually downloading the image (the network bandwidth is not fully saturated) but also on setting up the HTTP request etc (this is just a guess, I didn't actually measure any of this).
 - Maybe port to AvaloniaUI and test on macOS and linux.
 - Fix RestSharp's ArgumentException when calling DownloadData.
-- Option to cancel the loading of thumbnails when the dataset is Clear()'ed.
+- ~~Option to cancel the loading of thumbnails when the dataset is Clear()'ed.~~
+    - Added. Now the application doesn't add 'unloaded' elements to the UI, it only adds the ImageViewModel object after it's fully loaded (which feels a bit less fancy imo) Maybe we could add placeholders instead of unloaded viewmodels? But in that case we'd need to remove those when cancelling a reload, which might be intensive/ugly.)
+- When furiously scrolling to the bottom of the list while loading it won't trigger a new LoadPhotosCommand once it finishes loading (probably because the ScrollChanged event fires before ViewModel.IsLoadingPhotos is set to false, a Task.Delay would probably help but thats more like a hack than an actual solution)
 
 
 ## Troubleshooting

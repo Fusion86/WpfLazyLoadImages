@@ -23,7 +23,10 @@ namespace WpfLazyLoadImages
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
         private SourceList<ImageViewModel> images = new SourceList<ImageViewModel>();
-        public ObservableCollectionExtended<ImageViewModel> Images { get; } = new ObservableCollectionExtended<ImageViewModel>();
+        public ObservableCollectionExtended<ImageViewModel> ImagesBinding { get; } = new ObservableCollectionExtended<ImageViewModel>();
+
+        [Reactive]
+        public bool ScrollToBottom { get; set; }
 
         // TODO: This doesn't actually update in the UI for some reason
         [ObservableAsProperty]
@@ -34,11 +37,13 @@ namespace WpfLazyLoadImages
 
         private int page = 1;
 
+        // TODO: Auto fetch new posts when scrolling to the bottom of the ListView
+
         public AppViewModel()
         {
-            Pexels = new PexelsApi("563492ad6f91700001000001b68e8f6901fa462896a5bc6024e49b0d");
+            Pexels = new PexelsApi("snip");
 
-            images.Connect().Bind(Images).Subscribe();
+            images.Connect().Bind(ImagesBinding).Subscribe();
 
             LoadPhotosCommand = ReactiveCommand.CreateFromObservable(LoadPhotos);
             LoadPhotosCommand.Subscribe(x => images.Add(x));
@@ -49,7 +54,7 @@ namespace WpfLazyLoadImages
 
         private IObservable<ImageViewModel> LoadPhotos()
         {
-            int multiplier = 10;
+            int multiplier = 1;
 
             return Observable.Create<ImageViewModel>(async observer =>
             {
@@ -62,6 +67,7 @@ namespace WpfLazyLoadImages
 
                 var vms = dataSet.Select(x => new ImageViewModel(x));
 
+                // TODO: Do this parallel (with like 4 threads at the same time)
                 foreach (var vm in vms)
                 {
                     if (!IsLoadingPhotos)

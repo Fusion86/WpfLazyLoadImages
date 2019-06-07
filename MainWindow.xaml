@@ -7,6 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:WpfLazyLoadImages"
     xmlns:reactiveui="http://reactiveui.net"
+    xmlns:wpftk="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     mc:Ignorable="d"
     Title="MainWindow" Height="450" Width="800">
 
@@ -19,15 +20,17 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Button x:Name="LoadMoreButton" Content="Load more images"/>
             <Button x:Name="CancelButton" Content="Cancel" Margin="5,0,0,0"/>
+            <CheckBox x:Name="ScrollToBottomCheck" Content="Scroll to bottom" Margin="5,0,0,0" VerticalAlignment="Center"/>
 
             <TextBlock x:Name="LoadedImagesText" Margin="5,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
         <ListView x:Name="ListView" Grid.Row="1" Margin="0,5,0,0" BorderThickness="0"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.ScrollChanged="ListView_ScrollChanged">
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <WrapPanel/>
+                    <!--<WrapPanel/>-->
+                    <wpftk:VirtualizingWrapPanel/>
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
             

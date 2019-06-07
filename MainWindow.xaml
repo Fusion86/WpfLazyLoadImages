@@ -18,6 +18,7 @@
 
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Button x:Name="LoadMoreButton" Content="Load more images"/>
+            <Button x:Name="CancelButton" Content="Cancel" Margin="5,0,0,0"/>
 
             <TextBlock x:Name="LoadedImagesText" Margin="5,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>

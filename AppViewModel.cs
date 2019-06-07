@@ -4,6 +4,7 @@ using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using Splat;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -18,21 +19,20 @@ namespace WpfLazyLoadImages
     {
         public PexelsApi Pexels { get; }
 
-        public ReactiveCommand<Unit, Unit> LoadPhotosCommand { get; }
+        public ReactiveCommand<Unit, ImageViewModel> LoadPhotosCommand { get; }
+        public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
         private SourceList<ImageViewModel> images = new SourceList<ImageViewModel>();
         public ObservableCollectionExtended<ImageViewModel> Images { get; } = new ObservableCollectionExtended<ImageViewModel>();
-
-        [Reactive]
-        public long LoadedImages { get; private set; } = 0;
 
         // TODO: This doesn't actually update in the UI for some reason
         [ObservableAsProperty]
         public string LoadedImagesText { get; }
 
-        private int page = 1;
+        [ObservableAsProperty]
+        public bool IsLoadingPhotos { get; }
 
-        private readonly Stopwatch loadImageStopwatch = new Stopwatch();
+        private int page = 1;
 
         public AppViewModel()
         {
@@ -40,58 +40,49 @@ namespace WpfLazyLoadImages
 
             images.Connect().Bind(Images).Subscribe();
 
-            images.Connect()
-                .ObserveOn(RxApp.TaskpoolScheduler)
-                .SubscribeMany(LoadImage)
-                .Subscribe();
+            LoadPhotosCommand = ReactiveCommand.CreateFromObservable(LoadPhotos);
+            LoadPhotosCommand.Subscribe(x => images.Add(x));
+            LoadPhotosCommand.IsExecuting.ToPropertyEx(this, x => x.IsLoadingPhotos);
 
-            LoadPhotosCommand = ReactiveCommand.CreateFromTask(LoadData);
-
-            var obs = this.WhenAnyValue(x => x.Images.Count, x => x.LoadedImages,
-                (total, loaded) => $"Loaded images/total: {loaded}/{total}");
-
-            obs.ToPropertyEx(this, x => x.LoadedImagesText);
-
-            obs.Subscribe(x => this.Log().Info(x));
+            CancelCommand = ReactiveCommand.Create(() => { }, LoadPhotosCommand.IsExecuting);
         }
 
-        private async Task LoadData()
+        private IObservable<ImageViewModel> LoadPhotos()
         {
             int multiplier = 10;
-            var data = await Pexels.GetCurated(80, page++);
-            var vms = data.Select(x => new ImageViewModel(x));
 
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
-            images.Edit(list =>
+            return Observable.Create<ImageViewModel>(async observer =>
             {
-                // Simulate loading more data by duplicating our dataset
+                var data = await Pexels.GetCurated(80, page++);
+
+                // Multiply our dataset
+                List<PexelsPhoto> dataSet = new List<PexelsPhoto>(data.Count * multiplier);
                 for (int i = 0; i < multiplier; i++)
-                    list.AddRange(vms);
-            });
+                    dataSet.AddRange(data);
 
-            sw.Stop();
-            this.Log().Info($"Added {vms.Count() * multiplier} items in {sw.ElapsedMilliseconds}ms");
-        }
+                var vms = dataSet.Select(x => new ImageViewModel(x));
 
-        private IDisposable LoadImage(ImageViewModel image)
-        {
-            this.Log().Info("Downloading thumbnail for " + image.Name);
-            loadImageStopwatch.Restart();
+                foreach (var vm in vms)
+                {
+                    if (!IsLoadingPhotos)
+                    {
+                        this.Log().Info("Cancelled");
+                        break;
+                    }
 
-            byte[] bytes = Pexels.DownloadImage(image.ThumbnailUrl);
+                    this.Log().Info("Downloading thumbnail for " + vm.Name);
+                    byte[] bytes = Pexels.DownloadImage(vm.ThumbnailUrl);
 
-            using (MemoryStream ms = new MemoryStream(bytes))
-            {
-                IBitmap bmp = BitmapLoader.Current.Load(ms, null, null).Result;
-                image.Thumbnail = bmp.ToNative();
-                LoadedImages++;
-            }
-            loadImageStopwatch.Stop();
-            this.Log().Info("Downloaded in " + loadImageStopwatch.ElapsedMilliseconds + "ms");
+                    using (MemoryStream ms = new MemoryStream(bytes))
+                    {
+                        IBitmap bmp = await BitmapLoader.Current.Load(ms, null, null);
+                        vm.Thumbnail = bmp.ToNative();
+                        observer.OnNext(vm);
+                    }
+                }
 
-            return Disposable.Empty;
+                observer.OnCompleted();
+            }).TakeUntil(CancelCommand);
         }
     }
 }

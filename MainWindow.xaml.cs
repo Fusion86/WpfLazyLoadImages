@@ -13,9 +13,9 @@ namespace WpfLazyLoadImages
             this.WhenActivated(disposables =>
             {
                 this.OneWayBind(ViewModel, vm => vm.Images, v => v.ListView.ItemsSource).DisposeWith(disposables);
-                this.OneWayBind(ViewModel, vm => vm.LoadedImagesText, v => v.LoadedImagesText.Text).DisposeWith(disposables);
 
                 this.BindCommand(ViewModel, vm => vm.LoadPhotosCommand, v => v.LoadMoreButton).DisposeWith(disposables);
+                this.BindCommand(ViewModel, vm => vm.CancelCommand, v => v.CancelButton).DisposeWith(disposables);
             });
         }
     }

@@ -25,7 +25,8 @@ This is needed because I don't know of any other way to 'lazy load' a ViewModel 
     - A possible solution for this problem could be caching the images to the disk and unloading them whenever they scroll out of view(ing-range) and fetch them from the cache whenever they scroll into view.
 - Maybe load like 4 thumbnails in parallel, instead of synchronously. We obviously don't want to load all 800 at the same time, but maybe loading like 4 at the same time could be faster. This could be faster because not all the time is spent on actually downloading the image (the network bandwidth is not fully saturated) but also on setting up the HTTP request etc (this is just a guess, I didn't actually measure any of this).
 - Maybe port to AvaloniaUI and test on macOS and linux.
-- Fix RestSharp's ArgumentException when calling DownloadData
+- Fix RestSharp's ArgumentException when calling DownloadData.
+- Option to cancel the loading of thumbnails when the dataset is Clear()'ed.
 
 
 ## Troubleshooting

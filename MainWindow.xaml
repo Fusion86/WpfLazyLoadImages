@@ -11,6 +11,10 @@
     mc:Ignorable="d"
     Title="MainWindow" Height="450" Width="800">
 
+    <Window.Resources>
+        <local:BitmapConverter x:Key="BitmapConverter"/>
+    </Window.Resources>
+
     <Grid Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -22,23 +26,25 @@
             <Button x:Name="CancelButton" Content="Cancel" Margin="5,0,0,0"/>
             <CheckBox x:Name="ScrollToBottomCheck" Content="Scroll to bottom" Margin="5,0,0,0" VerticalAlignment="Center"/>
 
-            <TextBlock x:Name="LoadedImagesText" Margin="5,0,0,0" VerticalAlignment="Center"/>
+            <TextBlock x:Name="LoadedImagesText" Margin="20,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
 
         <ListView x:Name="ListView" Grid.Row="1" Margin="0,5,0,0" BorderThickness="0"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.ScrollChanged="ListView_ScrollChanged">
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  ScrollViewer.ScrollChanged="ListView_ScrollChanged">
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <!--<WrapPanel/>-->
                     <wpftk:VirtualizingWrapPanel/>
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
-            
+
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel>
                         <TextBlock Text="{Binding Name}"/>
-                        <Image Source="{Binding Thumbnail}" Width="200" Height="200"/>
+                        <Image Source="{Binding Thumbnail, Converter={StaticResource BitmapConverter}, IsAsync=True}"
+                               Width="200" Height="200"/>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>

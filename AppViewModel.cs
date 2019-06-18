@@ -15,8 +15,9 @@ using System.Threading.Tasks;
 
 namespace WpfLazyLoadImages
 {
-    public class AppViewModel : ReactiveObject, IEnableLogger
+    public class AppViewModel : ReactiveObject, IEnableLogger, ISupportsActivation
     {
+        public ViewModelActivator Activator { get; }
         public PexelsApi Pexels { get; }
 
         public ReactiveCommand<Unit, ImageViewModel> LoadPhotosCommand { get; }
@@ -36,11 +37,14 @@ namespace WpfLazyLoadImages
         public bool IsLoadingPhotos { get; }
 
         private int page = 1;
+        private int addedPhotos;
+        private long durationMs;
 
         // TODO: Auto fetch new posts when scrolling to the bottom of the ListView
 
         public AppViewModel()
         {
+            Activator = new ViewModelActivator();
             Pexels = new PexelsApi("snip");
 
             images.Connect().Bind(ImagesBinding).Subscribe();
@@ -50,6 +54,14 @@ namespace WpfLazyLoadImages
             LoadPhotosCommand.IsExecuting.ToPropertyEx(this, x => x.IsLoadingPhotos);
 
             CancelCommand = ReactiveCommand.Create(() => { }, LoadPhotosCommand.IsExecuting);
+
+            this.WhenActivated(disposables =>
+            {
+                this.WhenAnyValue(x => x.ImagesBinding.Count,
+                    (int count) => $"Loaded {count} images    (last chunk took {durationMs}ms and added {addedPhotos} photos)")
+                    .ToPropertyEx(this, x => x.LoadedImagesText)
+                    .DisposeWith(disposables);
+            });
         }
 
         private IObservable<ImageViewModel> LoadPhotos()
@@ -67,6 +79,9 @@ namespace WpfLazyLoadImages
 
                 var vms = dataSet.Select(x => new ImageViewModel(x));
 
+                Stopwatch sw = Stopwatch.StartNew();
+                int count = 0;
+
                 // TODO: Do this parallel (with like 4 threads at the same time)
                 foreach (var vm in vms)
                 {
@@ -76,16 +91,23 @@ namespace WpfLazyLoadImages
                         break;
                     }
 
-                    this.Log().Info("Downloading thumbnail for " + vm.Name);
-                    byte[] bytes = Pexels.DownloadImage(vm.ThumbnailUrl);
+                    //this.Log().Info("Downloading thumbnail for " + vm.Name);
+                    byte[] bytes = await Pexels.DownloadImage(vm.ThumbnailUrl);
+                    count++;
 
                     using (MemoryStream ms = new MemoryStream(bytes))
                     {
                         IBitmap bmp = await BitmapLoader.Current.Load(ms, null, null);
-                        vm.Thumbnail = bmp.ToNative();
+                        vm.Thumbnail = bmp;
                         observer.OnNext(vm);
                     }
                 }
+
+                sw.Stop();
+
+                // Set these after we finished loading
+                durationMs = sw.ElapsedMilliseconds;
+                addedPhotos = count;
 
                 observer.OnCompleted();
             }).TakeUntil(CancelCommand);

@@ -23,10 +23,11 @@ namespace WpfLazyLoadImages
             return resp.Data.Photos;
         }
 
-        public byte[] DownloadImage(string url)
+        public async Task<byte[]> DownloadImage(string url)
         {
             var req = new RestRequest(url);
-            return client.DownloadData(req);
+            var res = await client.ExecuteTaskAsync(req);
+            return res.RawBytes;
         }
     }
 

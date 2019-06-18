@@ -1,6 +1,6 @@
 ﻿using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
-using System.Windows.Media.Imaging;
+using Splat;
 
 namespace WpfLazyLoadImages
 {
@@ -11,10 +11,10 @@ namespace WpfLazyLoadImages
         public string ContentUrl { get; set; }
 
         [Reactive]
-        public BitmapSource Content { get; set; }
+        public IBitmap Content { get; set; }
 
         [Reactive]
-        public BitmapSource Thumbnail { get; set; }
+        public IBitmap Thumbnail { get; set; }
 
         public ImageViewModel(PexelsPhoto x)
         {

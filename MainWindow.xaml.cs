@@ -15,6 +15,7 @@ namespace WpfLazyLoadImages
             this.WhenActivated(disposables =>
             {
                 this.OneWayBind(ViewModel, vm => vm.ImagesBinding, v => v.ListView.ItemsSource).DisposeWith(disposables);
+                this.OneWayBind(ViewModel, vm => vm.LoadedImagesText, v => v.LoadedImagesText.Text).DisposeWith(disposables);
 
                 this.Bind(ViewModel, vm => vm.ScrollToBottom, v => v.ScrollToBottomCheck.IsChecked).DisposeWith(disposables);
 
@@ -34,10 +35,11 @@ namespace WpfLazyLoadImages
 
         private void ListView_ScrollChanged(object sender, System.Windows.Controls.ScrollChangedEventArgs e)
         {
-            double distanceToEnd = e.ExtentHeight - e.VerticalOffset - e.ViewportHeight;
+            // Disabled because buggy as duck
+            //double distanceToEnd = e.ExtentHeight - e.VerticalOffset - e.ViewportHeight;
 
-            if (distanceToEnd - 10 <= e.ViewportHeight && !ViewModel.IsLoadingPhotos)
-                ViewModel.LoadPhotosCommand.Execute().Subscribe();
+            //if (distanceToEnd - 10 <= e.ViewportHeight && !ViewModel.IsLoadingPhotos)
+            //    ViewModel.LoadPhotosCommand.Execute().Subscribe();
         }
     }
 }
